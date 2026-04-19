@@ -1,4 +1,4 @@
-package ru.yandex.practicum.collector.util;
+package ru.yandex.practicum.kafka.telemetry.util;
 
 import org.apache.avro.Schema;
 import org.apache.avro.io.BinaryEncoder;
