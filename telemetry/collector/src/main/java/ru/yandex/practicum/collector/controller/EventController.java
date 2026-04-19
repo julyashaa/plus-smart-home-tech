@@ -1,54 +1,76 @@
 package ru.yandex.practicum.collector.controller;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.collector.dto.hub.HubEvent;
-import ru.yandex.practicum.collector.dto.sensor.SensorEvent;
-import ru.yandex.practicum.collector.mapper.HubEventAvroMapper;
-import ru.yandex.practicum.collector.mapper.SensorEventAvroMapper;
-import ru.yandex.practicum.collector.service.KafkaEventProducer;
-import ru.yandex.practicum.collector.util.AvroSerializer;
+import com.google.protobuf.Empty;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
+import net.devh.boot.grpc.server.service.GrpcService;
+import ru.yandex.practicum.collector.handler.SensorEventHandler;
+import ru.yandex.practicum.collector.mapper.HubEventProtoMapper;
+import ru.yandex.practicum.collector.service.EventService;
+import ru.yandex.practicum.grpc.telemetry.collector.CollectorControllerGrpc;
+import ru.yandex.practicum.grpc.telemetry.event.HubEventProto;
+import ru.yandex.practicum.grpc.telemetry.event.SensorEventProto;
 
-@Slf4j
-@RequiredArgsConstructor
-@RestController
-@RequestMapping("/events")
-public class EventController {
-    private final SensorEventAvroMapper sensorMapper;
-    private final HubEventAvroMapper hubMapper;
-    private final KafkaEventProducer producer;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-    @Value("${collector.kafka.topics.sensors}")
-    private String sensorTopic;
+@GrpcService
+public class EventController extends CollectorControllerGrpc.CollectorControllerImplBase {
 
-    @Value("${collector.kafka.topics.hubs}")
-    private String hubTopic;
+    private final EventService eventService;
+    private final HubEventProtoMapper hubEventProtoMapper;
+    private final Map<SensorEventProto.PayloadCase, SensorEventHandler> sensorEventHandlers;
 
-    @PostMapping("/sensors")
-    public void collectSensorEvent(@Valid @RequestBody SensorEvent event) {
-        log.info("Received sensor event: {}", event);
-
-        var avro = sensorMapper.mapToAvro(event);
-
-        byte[] bytes = AvroSerializer.serialize(avro, avro.getSchema());
-
-        producer.send(sensorTopic, event.getId(), bytes);
+    public EventController(EventService eventService,
+                           HubEventProtoMapper hubEventProtoMapper,
+                           Set<SensorEventHandler> sensorEventHandlers) {
+        this.eventService = eventService;
+        this.hubEventProtoMapper = hubEventProtoMapper;
+        this.sensorEventHandlers = sensorEventHandlers.stream()
+                .collect(Collectors.toMap(
+                        SensorEventHandler::getMessageType,
+                        Function.identity()
+                ));
     }
 
-    @PostMapping("/hubs")
-    public void collectHubEvent(@Valid @RequestBody HubEvent event) {
-        log.info("Received hub event: {}", event);
+    @Override
+    public void collectSensorEvent(SensorEventProto request,
+                                   StreamObserver<Empty> responseObserver) {
+        try {
+            SensorEventHandler handler = sensorEventHandlers.get(request.getPayloadCase());
 
-        var avro = hubMapper.mapToAvro(event);
+            if (handler == null) {
+                throw new IllegalArgumentException(
+                        "Не могу найти обработчик для события " + request.getPayloadCase()
+                );
+            }
 
-        byte[] bytes = AvroSerializer.serialize(avro, avro.getSchema());
+            handler.handle(request);
 
-        producer.send(hubTopic, event.getHubId(), bytes);
+            responseObserver.onNext(Empty.getDefaultInstance());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(new StatusRuntimeException(
+                    Status.INTERNAL.withDescription(e.getLocalizedMessage()).withCause(e)
+            ));
+        }
+    }
+
+    @Override
+    public void collectHubEvent(HubEventProto request,
+                                StreamObserver<Empty> responseObserver) {
+        try {
+            eventService.processHubEvent(hubEventProtoMapper.toDto(request));
+
+            responseObserver.onNext(Empty.getDefaultInstance());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(new StatusRuntimeException(
+                    Status.INTERNAL.withDescription(e.getLocalizedMessage()).withCause(e)
+            ));
+        }
     }
 }
