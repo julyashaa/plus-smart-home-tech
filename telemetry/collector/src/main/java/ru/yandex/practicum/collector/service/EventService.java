@@ -8,7 +8,7 @@ import ru.yandex.practicum.collector.dto.hub.HubEvent;
 import ru.yandex.practicum.collector.dto.sensor.SensorEvent;
 import ru.yandex.practicum.collector.mapper.HubEventAvroMapper;
 import ru.yandex.practicum.collector.mapper.SensorEventAvroMapper;
-import ru.yandex.practicum.collector.util.AvroSerializer;
+import ru.yandex.practicum.kafka.telemetry.util.AvroSerializer;
 
 @Slf4j
 @Service
