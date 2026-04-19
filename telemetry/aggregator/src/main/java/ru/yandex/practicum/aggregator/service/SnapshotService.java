@@ -33,10 +33,10 @@ public class SnapshotService {
         SensorStateAvro oldState = snapshot.getSensorsState().get(event.getId());
 
         if (oldState != null) {
-            boolean eventIsOlderOrSame = !event.getTimestamp().isAfter(oldState.getTimestamp());
+            boolean eventIsOlder = event.getTimestamp().isBefore(oldState.getTimestamp());
             boolean dataIsSame = oldState.getData().equals(event.getPayload());
 
-            if (eventIsOlderOrSame || dataIsSame) {
+            if (eventIsOlder || dataIsSame) {
                 return Optional.empty();
             }
         }

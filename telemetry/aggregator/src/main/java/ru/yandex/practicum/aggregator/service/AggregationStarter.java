@@ -50,13 +50,14 @@ public class AggregationStarter {
                     if (snapshotOptional.isPresent()) {
                         SensorsSnapshotAvro snapshot = snapshotOptional.get();
 
-                        byte[] payload = AvroSerializer.serialize(snapshot, snapshot.getSchema());
+                        byte[] payload = AvroSerializer.serialize(snapshot, SensorsSnapshotAvro.getClassSchema());
 
                         snapshotProducer.send(
                                 outputTopic,
                                 snapshot.getHubId().toString(),
                                 payload
                         );
+                        snapshotProducer.flush();
 
                         log.info("Отправлен обновлённый снапшот для hubId={}", snapshot.getHubId());
                     }
