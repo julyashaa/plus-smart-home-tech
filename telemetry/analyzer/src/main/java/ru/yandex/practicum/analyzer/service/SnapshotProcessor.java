@@ -43,7 +43,7 @@ public class SnapshotProcessor {
                             continue;
                         }
 
-                        String hubId = snapshot.getHubId();
+                        String hubId = snapshot.getHubId().toString();
                         List<Scenario> scenarios = scenarioRepository.findByHubId(hubId);
 
                         if (!scenarios.isEmpty()) {

@@ -8,7 +8,13 @@ import ru.yandex.practicum.analyzer.model.Condition;
 import ru.yandex.practicum.analyzer.model.Scenario;
 import ru.yandex.practicum.analyzer.model.ScenarioAction;
 import ru.yandex.practicum.analyzer.model.ScenarioCondition;
-import ru.yandex.practicum.kafka.telemetry.event.*;
+import ru.yandex.practicum.kafka.telemetry.event.ClimateSensorAvro;
+import ru.yandex.practicum.kafka.telemetry.event.LightSensorAvro;
+import ru.yandex.practicum.kafka.telemetry.event.MotionSensorAvro;
+import ru.yandex.practicum.kafka.telemetry.event.SensorStateAvro;
+import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
+import ru.yandex.practicum.kafka.telemetry.event.SwitchSensorAvro;
+import ru.yandex.practicum.kafka.telemetry.event.TemperatureSensorAvro;
 
 import java.util.List;
 import java.util.Map;
@@ -37,8 +43,11 @@ public class ScenarioEvaluationService {
         String sensorId = link.getSensor().getId();
         Condition condition = link.getCondition();
 
-        Map<String, SensorStateAvro> sensorsState = snapshot.getSensorsState();
-        SensorStateAvro state = sensorsState.get(sensorId);
+        SensorStateAvro state = snapshot.getSensorsState().entrySet().stream()
+                .filter(entry -> entry.getKey().toString().equals(sensorId))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
 
         if (state == null) {
             return false;
