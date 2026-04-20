@@ -3,18 +3,14 @@ package ru.yandex.practicum.analyzer.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.analyzer.model.Action;
 import ru.yandex.practicum.analyzer.model.Condition;
 import ru.yandex.practicum.analyzer.model.Scenario;
 import ru.yandex.practicum.analyzer.model.ScenarioAction;
 import ru.yandex.practicum.analyzer.model.ScenarioCondition;
-import ru.yandex.practicum.kafka.telemetry.event.ClimateSensorAvro;
-import ru.yandex.practicum.kafka.telemetry.event.LightSensorAvro;
-import ru.yandex.practicum.kafka.telemetry.event.MotionSensorAvro;
-import ru.yandex.practicum.kafka.telemetry.event.SensorStateAvro;
-import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
-import ru.yandex.practicum.kafka.telemetry.event.SwitchSensorAvro;
-import ru.yandex.practicum.kafka.telemetry.event.TemperatureSensorAvro;
+import ru.yandex.practicum.analyzer.repository.ScenarioRepository;
+import ru.yandex.practicum.kafka.telemetry.event.*;
 
 import java.util.List;
 import java.util.Map;
@@ -25,8 +21,13 @@ import java.util.Map;
 public class ScenarioEvaluationService {
 
     private final ActionExecutor actionExecutor;
+    private final ScenarioRepository scenarioRepository;
 
-    public void evaluate(SensorsSnapshotAvro snapshot, List<Scenario> scenarios) {
+    @Transactional(readOnly = true)
+    public void evaluate(SensorsSnapshotAvro snapshot) {
+        String hubId = snapshot.getHubId().toString();
+        List<Scenario> scenarios = scenarioRepository.findByHubId(hubId);
+
         for (Scenario scenario : scenarios) {
             boolean allConditionsMatch = scenario.getConditions().stream()
                     .allMatch(link -> matchesCondition(snapshot, link));

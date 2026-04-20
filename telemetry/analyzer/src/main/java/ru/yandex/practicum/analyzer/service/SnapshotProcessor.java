@@ -7,13 +7,10 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.analyzer.model.Scenario;
-import ru.yandex.practicum.analyzer.repository.ScenarioRepository;
 import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.List;
 
 @Slf4j
 @Component
@@ -21,7 +18,6 @@ import java.util.List;
 public class SnapshotProcessor {
 
     private final KafkaConsumer<String, SensorsSnapshotAvro> snapshotConsumer;
-    private final ScenarioRepository scenarioRepository;
     private final ScenarioEvaluationService scenarioEvaluationService;
 
     @Value("${analyzer.kafka.topics.snapshots}")
@@ -43,12 +39,7 @@ public class SnapshotProcessor {
                             continue;
                         }
 
-                        String hubId = snapshot.getHubId().toString();
-                        List<Scenario> scenarios = scenarioRepository.findByHubId(hubId);
-
-                        if (!scenarios.isEmpty()) {
-                            scenarioEvaluationService.evaluate(snapshot, scenarios);
-                        }
+                        scenarioEvaluationService.evaluate(snapshot);
                     } catch (Exception e) {
                         log.error("Ошибка обработки snapshot: topic={}, partition={}, offset={}",
                                 record.topic(), record.partition(), record.offset(), e);
