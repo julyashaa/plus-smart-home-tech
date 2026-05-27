@@ -17,9 +17,15 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
 
-topic:
-  hubs: telemetry.hubs.v1
-  snapshots: telemetry.snapshots.v1
+analyzer:
+  kafka:
+    consumer-groups:
+      hubs: analyzer-hubs
+      snapshots: analyzer-snapshots
+
+    topics:
+      hubs: telemetry.hubs.v1
+      snapshots: telemetry.snapshots.v1
 
 grpc:
   client:
