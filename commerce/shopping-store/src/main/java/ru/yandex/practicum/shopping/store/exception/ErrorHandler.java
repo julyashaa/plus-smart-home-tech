@@ -1,0 +1,14 @@
+package ru.yandex.practicum.shopping.store.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+@RestControllerAdvice
+public class ErrorHandler {
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String handleProductNotFound(ProductNotFoundException e) {
+        return e.getMessage();
+    }
+}
