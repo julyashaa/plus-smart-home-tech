@@ -2,6 +2,7 @@ package ru.yandex.practicum.warehouse.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.interaction.api.dto.*;
 import ru.yandex.practicum.warehouse.exception.WarehouseBadRequestException;
 import ru.yandex.practicum.warehouse.mapper.WarehouseMapper;
@@ -25,6 +26,7 @@ public class WarehouseServiceImpl implements WarehouseService {
             ADDRESSES[new Random(new SecureRandom().nextInt()).nextInt(ADDRESSES.length)];
 
     @Override
+    @Transactional
     public void newProductInWarehouse(NewProductInWarehouseRequest request) {
         if (warehouseRepository.existsById(request.getProductId())) {
             throw new WarehouseBadRequestException("Product already exists in warehouse");
@@ -34,6 +36,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     @Override
+    @Transactional
     public void addProductToWarehouse(AddProductToWarehouseRequest request) {
         WarehouseProduct product = warehouseRepository.findById(request.getProductId())
                 .orElseThrow(() -> new WarehouseBadRequestException("Product not found in warehouse"));
@@ -49,9 +52,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     public BookedProductsDto checkProductQuantityEnoughForShoppingCart(
-            ShoppingCartDto shoppingCartDto
-    ) {
-
+            ShoppingCartDto shoppingCartDto) {
         double totalWeight = 0;
         double totalVolume = 0;
         boolean fragile = false;

@@ -2,6 +2,7 @@ package ru.yandex.practicum.shopping.cart.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.interaction.api.client.WarehouseClient;
 import ru.yandex.practicum.interaction.api.dto.ChangeProductQuantityRequest;
 import ru.yandex.practicum.interaction.api.dto.ShoppingCartDto;
@@ -32,6 +33,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     }
 
     @Override
+    @Transactional
     public ShoppingCartDto addProductsToShoppingCart(String username, Map<UUID, Long> products) {
         checkUsername(username);
 
@@ -63,6 +65,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     }
 
     @Override
+    @Transactional
     public void deactivateShoppingCart(String username) {
         checkUsername(username);
         ShoppingCart cart = getOrCreateCart(username);
@@ -71,6 +74,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     }
 
     @Override
+    @Transactional
     public ShoppingCartDto removeProductsFromShoppingCart(String username, List<UUID> products) {
         checkUsername(username);
         ShoppingCart cart = getOrCreateCart(username);
@@ -86,13 +90,14 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     }
 
     @Override
+    @Transactional
     public ShoppingCartDto changeProductQuantity(String username, ChangeProductQuantityRequest request) {
         checkUsername(username);
 
         ShoppingCart cart = getOrCreateCart(username);
         checkCartIsActive(cart);
         if (!cart.getProducts().containsKey(request.getProductId())) {
-            throw new RuntimeException("Product not found in shopping cart");
+            throw new BadRequestException("Product not found in shopping cart");
         }
 
         cart.getProducts().put(request.getProductId(), request.getNewQuantity());

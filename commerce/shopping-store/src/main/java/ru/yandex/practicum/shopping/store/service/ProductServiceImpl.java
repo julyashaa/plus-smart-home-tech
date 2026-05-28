@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.interaction.api.dto.ProductDto;
 import ru.yandex.practicum.interaction.api.dto.ProductPageDto;
 import ru.yandex.practicum.interaction.api.dto.SortDto;
@@ -83,35 +84,15 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
-    private List<Sort.Order> parseSort(List<String> sort) {
-
-        if (sort == null || sort.isEmpty()) {
-            return List.of(Sort.Order.asc("productName"));
-        }
-
-        return sort.stream()
-                .map(value -> {
-                    String[] parts = value.split(",");
-
-                    String property = parts[0];
-
-                    Sort.Direction direction =
-                            parts.length > 1
-                                    ? Sort.Direction.fromString(parts[1])
-                                    : Sort.Direction.ASC;
-
-                    return new Sort.Order(direction, property);
-                })
-                .toList();
-    }
-
     @Override
+    @Transactional
     public ProductDto createNewProduct(ProductDto productDto) {
         Product product = productMapper.toEntity(productDto);
         return productMapper.toDto(productRepository.save(product));
     }
 
     @Override
+    @Transactional
     public ProductDto updateProduct(ProductDto productDto) {
         Product product = productRepository.findById(productDto.getProductId())
                 .orElseThrow(() -> new ProductNotFoundException("Product not found"));
@@ -122,6 +103,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public Boolean setProductQuantityState(
             UUID productId,
             QuantityState quantityState) {
@@ -136,6 +118,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public Boolean removeProductFromStore(UUID productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found"));
