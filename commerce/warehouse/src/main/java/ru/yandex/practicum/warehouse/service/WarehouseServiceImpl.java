@@ -10,7 +10,9 @@ import ru.yandex.practicum.warehouse.model.WarehouseProduct;
 import ru.yandex.practicum.warehouse.repository.WarehouseRepository;
 
 import java.security.SecureRandom;
+import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -97,5 +99,64 @@ public class WarehouseServiceImpl implements WarehouseService {
                 .house(CURRENT_ADDRESS)
                 .flat(CURRENT_ADDRESS)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public BookedProductsDto assemblyProductForOrderFromShoppingCart(
+            AssemblyProductsForOrderRequest request
+    ) {
+        double totalWeight = 0;
+        double totalVolume = 0;
+        boolean fragile = false;
+
+        for (var entry : request.getProducts().entrySet()) {
+            WarehouseProduct product = warehouseRepository.findById(entry.getKey())
+                    .orElseThrow(() -> new WarehouseBadRequestException("Product not found in warehouse"));
+
+            long requestedQuantity = entry.getValue();
+
+            if (product.getQuantity() < requestedQuantity) {
+                throw new WarehouseBadRequestException("Not enough products in warehouse");
+            }
+
+            product.setQuantity(product.getQuantity() - requestedQuantity);
+
+            totalWeight += product.getWeight() * requestedQuantity;
+
+            totalVolume += product.getDimension().getWidth()
+                    * product.getDimension().getHeight()
+                    * product.getDimension().getDepth()
+                    * requestedQuantity;
+
+            if (Boolean.TRUE.equals(product.getFragile())) {
+                fragile = true;
+            }
+        }
+
+        return BookedProductsDto.builder()
+                .deliveryWeight(totalWeight)
+                .deliveryVolume(totalVolume)
+                .fragile(fragile)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void shippedToDelivery(ShippedToDeliveryRequest request) {
+        // Пока нечего обновлять: отдельной сущности OrderBooking у нас ещё нет.
+        // Метод нужен по контракту, чтобы delivery мог вызвать warehouse.
+    }
+
+    @Override
+    @Transactional
+    public void acceptReturn(Map<UUID, Long> products) {
+        for (var entry : products.entrySet()) {
+            WarehouseProduct product = warehouseRepository.findById(entry.getKey())
+                    .orElseThrow(() -> new WarehouseBadRequestException("Product not found in warehouse"));
+
+            long currentQuantity = product.getQuantity() == null ? 0 : product.getQuantity();
+            product.setQuantity(currentQuantity + entry.getValue());
+        }
     }
 }

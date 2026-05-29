@@ -1,6 +1,7 @@
 package ru.yandex.practicum.interaction.api.client;
 
 import jakarta.validation.Valid;
+import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.interaction.api.dto.ProductDto;
@@ -12,7 +13,7 @@ import ru.yandex.practicum.interaction.api.enumtype.QuantityState;
 import java.util.List;
 import java.util.UUID;
 
-@RequestMapping
+@FeignClient(name = "shopping-store", path = "/api/v1/shopping-store")
 public interface ShoppingStoreClient {
 
     @GetMapping
