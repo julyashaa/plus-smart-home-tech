@@ -44,3 +44,36 @@ services:
       POSTGRES_DB: analyzer
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
+
+  shopping-store-db:
+    image: postgres:16.1
+    container_name: shopping-store-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: shopping-store
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+
+  shopping-cart-db:
+    image: postgres:16.1
+    container_name: shopping-cart-db
+    restart: unless-stopped
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: shopping-cart
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+
+  warehouse-db:
+    image: postgres:16.1
+    container_name: warehouse-db
+    restart: unless-stopped
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: warehouse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password

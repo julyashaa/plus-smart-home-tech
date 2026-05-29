@@ -6,6 +6,9 @@ grpc:
     port: 59091
 
 spring:
+  application:
+    name: collector
+
   kafka:
     bootstrap-servers: localhost:9092
 
